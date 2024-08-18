@@ -11,7 +11,7 @@ app.use(express.json())
 
 
 app.get('/', (req, res) => {
-  res.send('Natural Agro Server is Running')
+  res.send('Natural Agro  is Running')
 })
 
 
