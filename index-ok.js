@@ -39,11 +39,12 @@ async function run() {
     const productsCollection = client.db('natural-agro').collection('products');
 
 
+    // Products Related API Endpoints
     // Get all products [with search, brandFilter, categoryFilter, priceFilter, sortPrice and sortDate]
     app.get('/products', async (req, res) => {
-      const { search, brandFilter, categoryFilter, priceFilter, sortPrice, sortDate } = req.query;
+      // const { search, brandFilter, categoryFilter, priceFilter, sortPrice, sortDate } = req.query;
+      const { search, sortPrice, brandFilter, categoryFilter, priceFilter, } = req.query;
       const query = {};
-      console.log("query:", query)
       
       if (search) {
           query.productName = { $regex: search, $options: 'i' };
@@ -64,6 +65,9 @@ async function run() {
 
       const sortOrder = sortPrice === 'asc' ? 1 : -1;
 
+      // const sortPrice = sort === 'asc' ? 1 : -1;
+      // const sortDate = sort === 'asc' ? 1 : -1;
+  
       try {
           const result = await productsCollection.find(query).toArray();
           
@@ -74,12 +78,40 @@ async function run() {
               return (priceA - priceB) * sortOrder;
           });
 
+
+          // Sort the products manually since MongoDB might treat numbers as strings
+          // result.sort((a, b) => {
+          //     const quantityA = parseInt(a.assetQuantity, 10);
+          //     const quantityB = parseInt(b.assetQuantity, 10);
+          //     return (quantityA - quantityB) * sortOrder;
+          // });
+  
           res.send(result);
       } catch (err) {
           res.status(500).send({ error: 'Failed to fetch products' });
       }
     });
 
+
+
+
+
+
+
+
+    // Get a Single Product by ID
+    app.get('/products/:id', async (req, res) => {
+      const id = req.params.id;
+      try {
+        const product = await productsCollection.findOne({ _id: new ObjectId(id) });
+        if (!product) {
+          return res.status(404).send({ message: 'Product not found' });
+        }
+        res.send(product);
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to fetch product', error });
+      }
+    });
 
     // Create a New Product
     app.post('/products', async (req, res) => {
@@ -92,6 +124,37 @@ async function run() {
       }
     });
 
+    // Update an Existing Product
+    app.put('/products/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedProduct = req.body;
+      try {
+        const result = await productsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedProduct }
+        );
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ message: 'Product not found' });
+        }
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to update product', error });
+      }
+    });
+
+    // Delete a Product
+    app.delete('/products/:id', async (req, res) => {
+      const id = req.params.id;
+      try {
+        const result = await productsCollection.deleteOne({ _id: new ObjectId(id) });
+        if (result.deletedCount === 0) {
+          return res.status(404).send({ message: 'Product not found' });
+        }
+        res.send({ message: 'Product deleted successfully' });
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to delete product', error });
+      }
+    });
 
     // Ping MongoDB to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

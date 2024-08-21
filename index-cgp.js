@@ -38,12 +38,11 @@ async function run() {
 
     const productsCollection = client.db('natural-agro').collection('products');
 
-
+    
     // Get all products [with search, brandFilter, categoryFilter, priceFilter, sortPrice and sortDate]
     app.get('/products', async (req, res) => {
       const { search, brandFilter, categoryFilter, priceFilter, sortPrice, sortDate } = req.query;
       const query = {};
-      console.log("query:", query)
       
       if (search) {
           query.productName = { $regex: search, $options: 'i' };
@@ -60,26 +59,19 @@ async function run() {
       if (priceFilter) {
           query.productPrice = priceFilter;
       }
-      
 
-      const sortOrder = sortPrice === 'asc' ? 1 : -1;
+      const sortOptions = {};
+      if (sortPrice) {
+          sortOptions.productPrice = sortPrice === 'asc' ? 1 : -1;
+      }
 
       try {
-          const result = await productsCollection.find(query).toArray();
-          
-          // Sort the products manually since MongoDB might treat numbers as strings
-          result.sort((a, b) => {
-              const priceA = parseInt(a.productPrice, 10);
-              const priceB = parseInt(b.productPrice, 10);
-              return (priceA - priceB) * sortOrder;
-          });
-
+          const result = await productsCollection.find(query).sort(sortOptions).toArray();
           res.send(result);
       } catch (err) {
           res.status(500).send({ error: 'Failed to fetch products' });
       }
     });
-
 
     // Create a New Product
     app.post('/products', async (req, res) => {
@@ -91,7 +83,6 @@ async function run() {
         res.status(500).send({ message: 'Failed to create product', error });
       }
     });
-
 
     // Ping MongoDB to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
