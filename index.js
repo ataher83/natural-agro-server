@@ -38,21 +38,8 @@ async function run() {
 
     const productsCollection = client.db('natural-agro').collection('products');
 
+
     // Products Related API Endpoints
-
-    // Get All Products
-    // app.get('/products', async (req, res) => {
-    //   try {
-    //     const cursor = productsCollection.find();
-    //     const products = await cursor.toArray();
-    //     res.send(products);
-    //   } catch (error) {
-    //     res.status(500).send({ message: 'Failed to fetch products', error });
-    //   }
-    // });
-
-
-
     // Get all products [with search, brandFilter, categoryFilter, priceFilter, sortPrice and sortDate]
     app.get('/products', async (req, res) => {
       // const { search, brandFilter, categoryFilter, priceFilter, sortPrice, sortDate } = req.query;
